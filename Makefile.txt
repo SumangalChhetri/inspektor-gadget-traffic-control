@@ -1,0 +1,22 @@
+CC = gcc
+CFLAGS = -I/usr/include/bpf
+LIBS = -lbpf
+BPF_SRC = bpf_program.c
+USER_SRC = main.c
+BPF_OBJ = bpf_program.o
+USER_OBJ = main.o
+TARGET = main
+
+all: $(TARGET)
+
+$(TARGET): $(USER_OBJ) $(BPF_OBJ)
+	$(CC) -o $@ $(USER_OBJ) $(BPF_OBJ) $(LIBS)
+
+$(BPF_OBJ): $(BPF_SRC)
+	bpf-clang -target bpf -c $(BPF_SRC) -o $(BPF_OBJ)
+
+$(USER_OBJ): $(USER_SRC)
+	$(CC) $(CFLAGS) -c $(USER_SRC) -o $(USER_OBJ)
+
+clean:
+	rm -f $(TARGET) $(USER_OBJ) $(BPF_OBJ)

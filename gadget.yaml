@@ -1,0 +1,30 @@
+name: ingress_packet_filtering_gadget
+description: A gadget for filtering incoming network packets using eBPF.
+version: 0.1
+program:
+  type: eBPF
+  path: bpf_program.o
+  attach: xdp
+  interface: eth0
+  mode: ingress
+  filter: |
+    #include <linux/bpf.h>
+    #include <linux/if_ether.h>
+    #include <linux/ip.h>
+    #include <linux/tcp.h>
+
+    SEC("filter")
+    int ingress_filter(struct __sk_buff *skb) {
+        struct ethhdr *eth = bpf_hdr(skb);
+        struct iphdr *ip = (struct iphdr *)(eth + 1);
+        struct tcphdr *tcp;
+
+        if (ip->protocol == IPPROTO_TCP) {
+            tcp = (struct tcphdr *)(ip + 1);
+            if (tcp->dest == htons(80)) {
+                return XDP_DROP;
+            }
+        }
+
+        return XDP_PASS;
+    }
